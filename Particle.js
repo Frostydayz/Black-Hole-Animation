@@ -25,11 +25,6 @@ window.addEventListener ('mousemove',
     function(event) {
         mouse.x = event.x;
         mouse.y = event.y;
-
-        //Make cursor blackhole
-        const blackHoleCursor = document.getElementById('blackHoleCursor');
-        blackHoleCursor.style.left = event.clientX + 'px';
-        blackHoleCursor.style.top = event.clientY + 'px';
     }
 )
 
@@ -68,18 +63,18 @@ class Particle {
         let distance = Math.sqrt(dx * dx + dy * dy);
         let collision = distance < mouse.radius + this.size;
         
-        const gatherParticles = () => {
-            let gatherSpeedX = dx / distance * 0.5;
-            let gatherSpeedY = dy / distance * 0.5; 
-
-
-            this.x += gatherSpeedX;    
-            this.y += gatherSpeedY;
-        }
-
         if (collision) {
-            gatherParticles.call(this);
-        } 
+            const angle = Math.atan2(dy, dx);
+            const acceleration = (mouse.radius - distance) / mouse.radius;
+
+            // Spiraling effect
+            this.directionX += Math.cos(angle) * acceleration * 0.7;
+            this.directionY += Math.sin(angle) * acceleration * 0.7;
+
+            // Tangential velocity for spiraling
+            this.directionX += Math.sin(angle) * acceleration * 0.4;
+            this.directionY -= Math.cos(angle) * acceleration * 0.4;
+        }
 
         this.x += this.directionX;
         this.y += this.directionY;
@@ -90,43 +85,59 @@ class Particle {
 }
 
 function createParticles() {
+    const starColors = ['#FFFFFF', '#FFFFED', '#FFF8DC', '#FFFACD', '#F0FFF0', '#F5FFFA', '#F0FFFF', '#F0F8FF', '#E6E6FA', '#DDDFFF'];
     numberOfParticles = (canvas.height * canvas.width) / 20000;
     for (let i = 0; i < numberOfParticles; i++) {
-        let size = Math.random() * 5 + 1;
+        let size = (Math.random() * 2) + 1;
         let x = Math.random() * (canvas.width - size * 2) + size;
         let y = Math.random() * (canvas.height - size * 2) + size;
         let directionX = (Math.random() * 0.4) - 0.2;
         let directionY = (Math.random() * 0.4) - 0.2;
-        let color = 'rgb(240, 240, 240)';
+        let color = starColors[Math.floor(Math.random() * starColors.length)];
         particlesArray.push(new Particle(x, y, directionX, directionY, size, color));
+    }
+}
+
+let accretionDiskParticles = [];
+
+function createAccretionDisk() {
+    const diskColors = ['#FFD700', '#FFA500', '#FF8C00', '#FF4500', '#FF6347'];
+    for (let i = 0; i < 300; i++) {
+        accretionDiskParticles.push(new AccretionDiskParticle(diskColors));
+    }
+}
+
+class AccretionDiskParticle {
+    constructor(colors) {
+        this.radius = Math.random() * 30 + 30;
+        this.angle = Math.random() * Math.PI * 2;
+        this.speed = Math.random() * 0.02 + 0.01;
+        this.size = Math.random() * 2 + 1;
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+        this.x = mouse.x + Math.cos(this.angle) * this.radius;
+        this.y = mouse.y + Math.sin(this.angle) * this.radius;
+    }
+
+    update() {
+        this.angle += this.speed;
+        this.x = mouse.x + Math.cos(this.angle) * this.radius;
+        this.y = mouse.y + Math.sin(this.angle) * this.radius;
+    }
+
+    draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2, false);
+        ctx.fillStyle = this.color;
+        ctx.fill();
     }
 }
 
 function initialize() {
     particlesArray = [];
     createParticles();
+    createAccretionDisk();
 }
 
-function connectDots() {
-    for (let a = 0; a < particlesArray.length; a++) {
-        for (let b = a; b < particlesArray.length; b++) {
-            let distance = 
-            ((particlesArray[a].x - particlesArray[b].x) * 
-            (particlesArray[a].x - particlesArray[b].x)) + 
-            ((particlesArray[a].y - particlesArray[b].y) * 
-            (particlesArray[a].y - particlesArray[b].y));
-
-            if (distance < (canvas.height/10) * (canvas.width/10)) {
-                ctx.strokeStyle="rgba(205, 167, 255, 0.14)";
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(particlesArray[a].x, particlesArray[a].y);
-                ctx.lineTo(particlesArray[b].x, particlesArray[b].y);
-                ctx.stroke();
-            }    
-        }
-    }
-}
 
 
 class ExplosionParticle {
@@ -217,12 +228,20 @@ function animate() {
         }, 500);
     }
 
+    accretionDiskParticles.forEach(p => {
+        p.update();
+        p.draw();
+    });
 
-    const blackHoleCursor = document.getElementById('blackHoleCursor');
-    blackHoleCursor.textContent = count;
-    blackHoleCursor.style.color = "white";
-    blackHoleCursor.style.fontSize = "20px";
-    connectDots();
+    ctx.beginPath();
+    ctx.arc(mouse.x, mouse.y, mouse.radius / 4, 0, Math.PI * 2, false);
+    ctx.fillStyle = 'black';
+    ctx.fill();
+
+    ctx.fillStyle = 'white';
+    ctx.font = '20px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(count, mouse.x, mouse.y + 7);
 }
 
 
