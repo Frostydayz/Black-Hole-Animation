@@ -15,15 +15,3 @@
 body {
     color: rgba(107, 113, 199, 0.397);
 }
-
-#blackHoleCursor {
-    position: fixed; 
-    width: 100px; 
-    height: 100px;
-    background: radial-gradient(circle at center, black 0%, 70%, transparent 100%); 
-    border-radius: 50%;
-    pointer-events: none; 
-    transform: translate(-50%, -50%); 
-    z-index: 9999; 
-    box-shadow: 0 0 10px 5px rgb(255, 187, 0), 0 0 20px 10px rgb(255, 123, 0); 
-}
